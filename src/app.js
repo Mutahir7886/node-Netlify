@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const UserModel = require('./models/users.js');
+const UserModel = require('../models/users.js');
+const serverless = require('serverless-http')
+const route = express.Router()
 
 //const UserModel = require('./models/users');
 const app = express();
@@ -12,10 +14,11 @@ const port = 9000;
 // require('./models/users.js')
 // asdasd
 
-mongoose.connect('mongodb://localhost:27017/resumedb',{useNewUrlParser: true,
+mongoose.connect('mongodb+srv://mutahirceme786:nV8NtBPh9OmigQst@project1.vk4uz.mongodb.net/project1?retryWrites=true&w=majority',{useNewUrlParser: true,
 useUnifiedTopology: true,
 useFindAndModify: false,
 useCreateIndex: true })
+
 
 mongoose.connection.on('connected',()=>{
     console.log('Connection to Database Successful')
@@ -40,7 +43,9 @@ app.use(function(req, res, next) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   next();
 });
-app.post('/add', async (req, res) =>{
+
+
+route.post('/add', async (req, res) =>{
   const data = new UserModel({
     bioData: req.body.bioData,
     education: req.body.education,
@@ -57,7 +62,8 @@ app.post('/add', async (req, res) =>{
   }
 });
 
-app.get('/api/users', (req, res) => {
+route.get('/api/users', (req, res) => {
+  
   UserModel.find().then(resumes => {
     let resumeList=[], b={};
     
@@ -78,7 +84,7 @@ app.get('/api/users', (req, res) => {
 
 });
 
-app.get('/finduser/:id',function(req,res){
+route.get('/finduser/:id',function(req,res){
   UserModel.findOne({ "_id": req.params.id }, function (err, userDocument) {
       if(userDocument){
           res.json({
@@ -97,7 +103,7 @@ app.get('/finduser/:id',function(req,res){
   });
 });
 
-app.delete('/api/users/:id', (req, res) =>{
+route.delete('/api/users/:id', (req, res) =>{
   UserModel.deleteOne({ _id: req.params.id }).then(result => {
     console.log(result);
     res.status(200).json({ message: 'Resume deleted'});
@@ -105,6 +111,9 @@ app.delete('/api/users/:id', (req, res) =>{
 });
 
 
-app.listen(port, () =>{
-    console.log('Server has started running at port: ' + port);
-});
+// app.listen(port, () =>{
+//     console.log('Server has started running at port: ' + port);
+// });
+
+app.use('/.netlify/functions/app', route)
+module.exports.handler = serverless(app)
